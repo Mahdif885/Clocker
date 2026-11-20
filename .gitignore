@@ -1,0 +1,21 @@
+# Données et artefacts lourds (ne jamais les pousser sur GitHub)
+data/
+models/*.keras
+models/*.h5
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.ipynb_checkpoints/
+.pytest_cache/
+.ruff_cache/
+
+# Secrets
+kaggle.json
+.env
+
+# Système
+.DS_Store
+Thumbs.db

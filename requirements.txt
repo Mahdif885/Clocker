@@ -1,0 +1,12 @@
+numpy>=1.26
+opencv-python>=4.9
+pandas>=2.1
+matplotlib>=3.8
+scikit-learn>=1.4
+tensorflow>=2.16
+streamlit>=1.50
+tqdm>=4.66
+kaggle>=1.6
+jupyter>=1.0
+pytest>=8.0
+ruff>=0.5
