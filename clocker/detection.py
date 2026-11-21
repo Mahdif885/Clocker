@@ -52,12 +52,16 @@ def _shape_name(contour) -> str:
     peri = cv2.arcLength(contour, True)
     approx = cv2.approxPolyDP(contour, 0.04 * peri, True)
     n = len(approx)
-    if n == 3:
-        return "triangle"
-    if n == 8:
-        return "octogone"
     area = cv2.contourArea(contour)
     circularity = 4 * np.pi * area / (peri * peri + 1e-6)
+    if n == 3:
+        return "triangle"
+    # Un cercle approximé donne souvent 8 sommets : on teste la circularité d'abord
+    # (cercle parfait = 1 ; octogone régulier ≈ 0,95 ; on garde une marge)
+    if circularity > 0.85:
+        return "cercle"
+    if n == 8:
+        return "octogone"
     return "cercle" if circularity > 0.7 else "autre"
 
 
@@ -108,6 +112,12 @@ def detect_signs(image_rgb: np.ndarray, use_hough: bool = True) -> list[Candidat
             if all(_iou(c, k) < 0.3 for k in cands):
                 cands.append(c)
     return cands
+
+
+def main_sign(image_rgb: np.ndarray) -> Candidate | None:
+    """Plus grand panneau rouge ou bleu de l'image (None si aucun)."""
+    cands = detect_signs(image_rgb, use_hough=False)
+    return max(cands, key=lambda c: c.w * c.h, default=None)
 
 
 def crop(image_rgb: np.ndarray, cand: Candidate, margin: float = 0.1) -> np.ndarray:

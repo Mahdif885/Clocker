@@ -17,7 +17,7 @@ import streamlit as st
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from clocker import config  # noqa: E402
-from clocker.detection import crop, detect_signs  # noqa: E402
+from clocker.detection import crop, detect_signs, main_sign  # noqa: E402
 from clocker.labels import DANGER, PROHIBITION, SPEED_LIMIT, SPEED_VALUES  # noqa: E402
 from clocker.preprocessing import apply_clahe, denoise_bilateral  # noqa: E402
 from clocker.robustness import gaussian_blur, gaussian_noise  # noqa: E402
@@ -59,7 +59,12 @@ st.title("🚦 Clocker — Reconnaissance de panneaux de signalisation")
 
 with st.sidebar:
     st.header("Paramètres")
-    mode = st.radio("Type d'image", ["Panneau recadré", "Scène complète (détection)"])
+    mode = st.radio(
+        "Type d'image",
+        ["Automatique", "Panneau recadré", "Scène complète (détection)"],
+        help="Automatique : cherche le panneau rouge/bleu principal et le recadre avant "
+             "de classifier (comme les images GTSRB). Recadré : l'image entière est le panneau.",
+    )
     prep = config.load_prep(config.MODEL_PATH.stem)
     use_denoise = st.checkbox("Débruitage bilatéral", value=prep["denoise"])
     use_clahe = st.checkbox("Prétraitement CLAHE", value=prep["clahe"])
@@ -90,16 +95,24 @@ from clocker.inference import predict_image  # noqa: E402
 
 model = get_model()
 
-if mode == "Panneau recadré":
+if mode in ("Automatique", "Panneau recadré"):
+    sign = image
+    if mode == "Automatique":
+        cand = main_sign(image)
+        if cand is None:
+            st.info("Aucun panneau rouge/bleu détecté : classification de l'image entière.")
+        else:
+            sign = crop(image, cand)
     t0 = time.perf_counter()
-    pred = predict_image(model, image, use_clahe=use_clahe, denoise=use_denoise)
+    pred = predict_image(model, sign, use_clahe=use_clahe, denoise=use_denoise)
     ms = 1000 * (time.perf_counter() - t0)
 
     c1, c2, c3 = st.columns([1, 1, 1.4])
     c1.image(image, caption="Image d'entrée", width="stretch")
-    shown_prep = denoise_bilateral(image) if use_denoise else image
+    shown_prep = denoise_bilateral(sign) if use_denoise else sign
     shown_prep = apply_clahe(shown_prep) if use_clahe else shown_prep
-    c2.image(shown_prep, caption="Après prétraitement", width="stretch")
+    c2.image(shown_prep, caption="Panneau recadré, après prétraitement"
+             if sign is not image else "Après prétraitement", width="stretch")
     with c3:
         dashboard_alert(pred)
         st.caption(f"Temps d'inférence : {ms:.1f} ms")
