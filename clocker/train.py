@@ -43,6 +43,7 @@ def train(
     batch_size: int = config.BATCH_SIZE,
     img_size: int = config.IMG_SIZE,
     use_clahe: bool = True,
+    denoise: bool = False,
     augment: bool = True,
     use_class_weight: bool = True,
     filters: tuple[int, ...] = (32, 64, 128),
@@ -51,7 +52,7 @@ def train(
 ) -> tf.keras.Model:
     """Entraîne le modèle et sauvegarde modèle, courbes et historique."""
     tf.keras.utils.set_random_seed(config.SEED)
-    data = data if data is not None else load_cache(img_size, use_clahe)
+    data = data if data is not None else load_cache(img_size, use_clahe, denoise)
     x_train, y_train = data["x_train"], data["y_train"]
     x_val, y_val = data["x_val"], data["y_val"]
 
@@ -86,6 +87,8 @@ def train(
         verbose=2,
     )
     model.save(model_path)
+    config.save_prep(run_name, size=img_size, clahe=use_clahe, denoise=denoise,
+                     augment=augment, blocks=len(filters))
 
     hist = {k: [float(v) for v in vals] for k, vals in history.history.items()}
     with open(config.REPORTS_DIR / f"{run_name}_history.json", "w", encoding="utf-8") as f:
@@ -104,6 +107,7 @@ def main() -> None:
     p.add_argument("--size", type=int, default=config.IMG_SIZE)
     p.add_argument("--blocks", type=int, default=3, choices=[2, 3])
     p.add_argument("--no-clahe", action="store_true")
+    p.add_argument("--denoise", action="store_true", help="débruitage bilatéral avant CLAHE")
     p.add_argument("--no-augment", action="store_true")
     p.add_argument("--no-class-weight", action="store_true")
     p.add_argument("--name", default="clocker_cnn", help="nom de l'expérience")
@@ -113,6 +117,7 @@ def main() -> None:
         batch_size=a.batch_size,
         img_size=a.size,
         use_clahe=not a.no_clahe,
+        denoise=a.denoise,
         augment=not a.no_augment,
         use_class_weight=not a.no_class_weight,
         filters=(32, 64, 128)[: a.blocks],

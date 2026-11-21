@@ -19,7 +19,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from clocker import config  # noqa: E402
 from clocker.detection import crop, detect_signs  # noqa: E402
 from clocker.labels import DANGER, PROHIBITION, SPEED_LIMIT, SPEED_VALUES  # noqa: E402
-from clocker.preprocessing import apply_clahe  # noqa: E402
+from clocker.preprocessing import apply_clahe, denoise_bilateral  # noqa: E402
 from clocker.robustness import gaussian_blur, gaussian_noise  # noqa: E402
 
 ALERT_COLORS = {SPEED_LIMIT: "#1f6feb", DANGER: "#f0883e", PROHIBITION: "#da3633"}
@@ -60,7 +60,9 @@ st.title("🚦 Clocker — Reconnaissance de panneaux de signalisation")
 with st.sidebar:
     st.header("Paramètres")
     mode = st.radio("Type d'image", ["Panneau recadré", "Scène complète (détection)"])
-    use_clahe = st.checkbox("Prétraitement CLAHE", value=True)
+    prep = config.load_prep(config.MODEL_PATH.stem)
+    use_denoise = st.checkbox("Débruitage bilatéral", value=prep["denoise"])
+    use_clahe = st.checkbox("Prétraitement CLAHE", value=prep["clahe"])
     st.subheader("Test de robustesse")
     blur = st.slider("Flou gaussien (sigma)", 0.0, 4.0, 0.0, 0.25)
     noise = st.slider("Bruit gaussien (écart-type)", 0.0, 0.3, 0.0, 0.01)
@@ -90,13 +92,14 @@ model = get_model()
 
 if mode == "Panneau recadré":
     t0 = time.perf_counter()
-    pred = predict_image(model, image, use_clahe=use_clahe)
+    pred = predict_image(model, image, use_clahe=use_clahe, denoise=use_denoise)
     ms = 1000 * (time.perf_counter() - t0)
 
     c1, c2, c3 = st.columns([1, 1, 1.4])
     c1.image(image, caption="Image d'entrée", width="stretch")
-    c2.image(apply_clahe(image) if use_clahe else image,
-             caption="Après CLAHE" if use_clahe else "Sans CLAHE", width="stretch")
+    shown_prep = denoise_bilateral(image) if use_denoise else image
+    shown_prep = apply_clahe(shown_prep) if use_clahe else shown_prep
+    c2.image(shown_prep, caption="Après prétraitement", width="stretch")
     with c3:
         dashboard_alert(pred)
         st.caption(f"Temps d'inférence : {ms:.1f} ms")
@@ -108,7 +111,7 @@ else:
     shown = image.copy()
     results = []
     for cand in cands:
-        pred = predict_image(model, crop(image, cand), use_clahe=use_clahe)
+        pred = predict_image(model, crop(image, cand), use_clahe=use_clahe, denoise=use_denoise)
         if pred.confidence < 0.6:
             continue
         results.append((cand, pred))

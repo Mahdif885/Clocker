@@ -1,0 +1,11 @@
+reelle,predite,nom_reelle,nom_predite,nb_erreurs
+3,5,Limitation 60 km/h,Limitation 80 km/h,28
+30,23,Risque de neige ou verglas,Chaussée glissante,24
+22,25,Chaussée déformée,Travaux,23
+6,42,Fin de limitation 80 km/h,Fin d'interdiction de dépasser (poids lourds),8
+12,15,Route prioritaire,Circulation interdite,7
+28,29,Enfants,Cyclistes,3
+10,9,Interdiction de dépasser (poids lourds),Interdiction de dépasser,3
+7,8,Limitation 100 km/h,Limitation 120 km/h,3
+2,1,Limitation 50 km/h,Limitation 30 km/h,2
+25,27,Travaux,Passage piétons,2

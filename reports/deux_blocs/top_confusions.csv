@@ -1,0 +1,11 @@
+reelle,predite,nom_reelle,nom_predite,nb_erreurs
+38,40,Contournement par la droite,Giratoire,15
+30,23,Risque de neige ou verglas,Chaussée glissante,14
+22,25,Chaussée déformée,Travaux,11
+3,5,Limitation 60 km/h,Limitation 80 km/h,10
+26,31,Feux tricolores,Passage d'animaux sauvages,9
+18,26,Danger,Feux tricolores,5
+12,15,Route prioritaire,Circulation interdite,4
+9,10,Interdiction de dépasser,Interdiction de dépasser (poids lourds),4
+38,34,Contournement par la droite,Obligation de tourner à gauche,3
+18,27,Danger,Passage piétons,3

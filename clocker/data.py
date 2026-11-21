@@ -41,6 +41,7 @@ def load_images(
     size: int = config.IMG_SIZE,
     use_clahe: bool = True,
     use_roi: bool = True,
+    denoise: bool = False,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Charge, recadre et prétraite toutes les images d'un DataFrame."""
     images, labels = [], []
@@ -48,32 +49,33 @@ def load_images(
         img = load_rgb(row.abs_path)
         if use_roi:
             img = crop_roi(img, row.x1, row.y1, row.x2, row.y2)
-        images.append(preprocess(img, size=size, use_clahe=use_clahe))
+        images.append(preprocess(img, size=size, use_clahe=use_clahe, denoise=denoise))
         labels.append(row.ClassId)
     return np.stack(images), np.asarray(labels, dtype=np.int64)
 
 
-def cache_path(size: int, use_clahe: bool) -> Path:
+def cache_path(size: int, use_clahe: bool, denoise: bool = False) -> Path:
     """Nom du fichier cache selon la configuration de prétraitement."""
-    tag = "clahe" if use_clahe else "raw"
+    tag = ("dn_" if denoise else "") + ("clahe" if use_clahe else "raw")
     return config.CACHE_DIR / f"gtsrb_{size}_{tag}.npz"
 
 
-def build_cache(size: int = config.IMG_SIZE, use_clahe: bool = True) -> Path:
+def build_cache(size: int = config.IMG_SIZE, use_clahe: bool = True,
+                denoise: bool = False) -> Path:
     """Prétraite train (+ découpage validation stratifié) et test, puis sauvegarde en .npz."""
     train_df = read_split("train")
     test_df = read_split("test")
 
-    x_all, y_all = load_images(train_df, size=size, use_clahe=use_clahe)
+    x_all, y_all = load_images(train_df, size=size, use_clahe=use_clahe, denoise=denoise)
     x_train, x_val, y_train, y_val = train_test_split(
         x_all, y_all,
         test_size=config.VAL_SPLIT,
         stratify=y_all,
         random_state=config.SEED,
     )
-    x_test, y_test = load_images(test_df, size=size, use_clahe=use_clahe)
+    x_test, y_test = load_images(test_df, size=size, use_clahe=use_clahe, denoise=denoise)
 
-    out = cache_path(size, use_clahe)
+    out = cache_path(size, use_clahe, denoise)
     out.parent.mkdir(parents=True, exist_ok=True)
     # float16 divise la taille du cache par deux sans perte utile
     np.savez_compressed(
@@ -86,11 +88,12 @@ def build_cache(size: int = config.IMG_SIZE, use_clahe: bool = True) -> Path:
     return out
 
 
-def load_cache(size: int = config.IMG_SIZE, use_clahe: bool = True) -> dict[str, np.ndarray]:
+def load_cache(size: int = config.IMG_SIZE, use_clahe: bool = True,
+               denoise: bool = False) -> dict[str, np.ndarray]:
     """Charge le cache .npz (le construit s'il n'existe pas)."""
-    path = cache_path(size, use_clahe)
+    path = cache_path(size, use_clahe, denoise)
     if not path.exists():
-        build_cache(size, use_clahe)
+        build_cache(size, use_clahe, denoise)
     with np.load(path) as data:
         return {k: data[k].astype(np.float32) if k.startswith("x_") else data[k] for k in data}
 
@@ -99,8 +102,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Prétraite GTSRB et crée le cache .npz")
     parser.add_argument("--size", type=int, default=config.IMG_SIZE)
     parser.add_argument("--no-clahe", action="store_true")
+    parser.add_argument("--denoise", action="store_true", help="débruitage bilatéral avant CLAHE")
     args = parser.parse_args()
-    build_cache(size=args.size, use_clahe=not args.no_clahe)
+    build_cache(size=args.size, use_clahe=not args.no_clahe, denoise=args.denoise)
 
 
 if __name__ == "__main__":

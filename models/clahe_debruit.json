@@ -1,0 +1,7 @@
+{
+  "size": 32,
+  "clahe": true,
+  "denoise": true,
+  "augment": true,
+  "blocks": 3
+}

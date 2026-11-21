@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import dataclass
+from pathlib import Path
 
 import numpy as np
 import tensorflow as tf
@@ -31,9 +32,9 @@ def load_model(path=config.MODEL_PATH) -> tf.keras.Model:
 
 
 def predict_image(model: tf.keras.Model, image_rgb: np.ndarray, use_clahe: bool = True,
-                  k: int = 3) -> Prediction:
+                  denoise: bool = False, k: int = 3) -> Prediction:
     size = model.input_shape[1]
-    x = preprocess(image_rgb, size=size, use_clahe=use_clahe)[None]
+    x = preprocess(image_rgb, size=size, use_clahe=use_clahe, denoise=denoise)[None]
     probs = model(x, training=False).numpy()[0]
     order = np.argsort(probs)[::-1][:k]
     top = [(int(i), class_name(i), float(probs[i])) for i in order]
@@ -46,7 +47,8 @@ def main() -> None:
     p.add_argument("image")
     p.add_argument("--model", default=str(config.MODEL_PATH))
     a = p.parse_args()
-    pred = predict_image(load_model(a.model), load_rgb(a.image))
+    prep = config.load_prep(Path(a.model).stem)
+    pred = predict_image(load_model(a.model), load_rgb(a.image), prep["clahe"], prep["denoise"])
     print(f"{pred.name}  [{pred.category}]  confiance = {pred.confidence:.1%}")
     for cid, name, pr in pred.top_k:
         print(f"  {cid:2d}  {name:45s} {pr:.1%}")

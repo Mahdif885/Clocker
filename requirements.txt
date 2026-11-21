@@ -10,3 +10,4 @@ kaggle>=1.6
 jupyter>=1.0
 pytest>=8.0
 ruff>=0.5
+tabulate>=0.9

@@ -1,0 +1,11 @@
+reelle,predite,nom_reelle,nom_predite,nb_erreurs
+42,41,Fin d'interdiction de dépasser (poids lourds),Fin d'interdiction de dépasser,20
+12,15,Route prioritaire,Circulation interdite,13
+18,27,Danger,Passage piétons,12
+6,5,Fin de limitation 80 km/h,Limitation 80 km/h,12
+22,25,Chaussée déformée,Travaux,11
+8,5,Limitation 120 km/h,Limitation 80 km/h,11
+18,26,Danger,Feux tricolores,10
+6,42,Fin de limitation 80 km/h,Fin d'interdiction de dépasser (poids lourds),10
+25,11,Travaux,Priorité à la prochaine intersection,7
+3,5,Limitation 60 km/h,Limitation 80 km/h,6

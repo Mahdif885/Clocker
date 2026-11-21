@@ -1,0 +1,11 @@
+reelle,predite,nom_reelle,nom_predite,nb_erreurs
+22,25,Chaussée déformée,Travaux,23
+12,15,Route prioritaire,Circulation interdite,15
+3,5,Limitation 60 km/h,Limitation 80 km/h,12
+27,11,Passage piétons,Priorité à la prochaine intersection,7
+12,38,Route prioritaire,Contournement par la droite,7
+30,23,Risque de neige ou verglas,Chaussée glissante,6
+18,26,Danger,Feux tricolores,5
+6,42,Fin de limitation 80 km/h,Fin d'interdiction de dépasser (poids lourds),5
+33,39,Obligation de tourner à droite,Contournement par la gauche,3
+12,40,Route prioritaire,Giratoire,3
