@@ -1,0 +1,4 @@
+taille,panneaux,detecteur_seul,detecte_au_seuil,detecte_et_bien_classe
+grands (> 64 px),135,48.9,48.9,48.9
+moyens (32-64 px),420,28.1,28.1,27.9
+petits (< 32 px),297,13.1,12.5,12.1

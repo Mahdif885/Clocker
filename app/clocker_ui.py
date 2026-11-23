@@ -1,5 +1,5 @@
 # ruff: noqa: E501  (feuille de style CSS intégrée : lignes longues assumées)
-"""Clocker — interface de démonstration (thème « béton et bitume », palette grise).
+"""Clocker — interface de démonstration (barre latérale bleu nuit, contenu clair).
 
 Lancement :
     python -m streamlit run app/clocker_ui.py
@@ -44,227 +44,260 @@ from clocker.preprocessing import finish, load_rgb, preprocess  # noqa: E402
 from clocker.robustness import PERTURBATIONS  # noqa: E402
 
 # --------------------------------------------------------------------------- #
-# Palette : gris béton et bitume + couleurs réelles de la signalisation
+# Palette : barre latérale bleu nuit, contenu clair bleuté, couleurs de signalisation
 # --------------------------------------------------------------------------- #
-ASPHALT = "#D4D7DB"     # fond de page : béton clair (grain par-dessus)
-TARMAC = "#E6E8EB"      # cartes
-KERB = "#B3B8BE"        # bordures, pistes des jauges
-MARKING = "#26292D"     # texte principal : graphite
-MUTED = "#5D636B"       # texte secondaire
-GRAPHITE = "#454A51"    # accent neutre : onglet actif, liens, contours
-YELLOW = "#F5C518"      # marquage jaune, actions, accent principal
-RED = "#D7263D"         # bordure des panneaux de danger et d'interdiction
-BLUE = "#1D5FBF"        # panneaux de direction et d'obligation
-GREEN = "#1F7A4D"       # cartouche de route européenne
+NAVY = "#0E1B33"        # barre latérale
+ASPHALT = "#EEF2F7"     # fond de page
+TARMAC = "#FFFFFF"      # cartes
+KERB = "#D8E0EB"        # bordures, pistes des jauges
+MARKING = "#14203A"     # texte principal
+MUTED = "#5B6780"       # texte secondaire
+GRAPHITE = "#2A3550"    # traits neutres (graphiques)
+BLUE = "#1F63E0"        # accent principal, panneaux de direction
+RED = "#E0243A"         # danger, interdiction
+GREEN = "#1E9E57"       # validation
+YELLOW = "#F7B500"      # priorité, avertissement
 
 CATEGORY_COLORS = {
     SPEED_LIMIT: BLUE, DANGER: RED, PROHIBITION: RED,
     MANDATORY: BLUE, PRIORITY: YELLOW, END: MUTED,
 }
 BOX_RGB = {
-    SPEED_LIMIT: (29, 95, 191), DANGER: (215, 38, 61), PROHIBITION: (215, 38, 61),
-    MANDATORY: (29, 95, 191), PRIORITY: (245, 197, 24), END: (154, 161, 169),
+    SPEED_LIMIT: (31, 99, 224), DANGER: (224, 36, 58), PROHIBITION: (224, 36, 58),
+    MANDATORY: (31, 99, 224), PRIORITY: (247, 181, 0), END: (140, 150, 168),
 }
 SCALED_WITH_SIZE = {"Flou gaussien (sigma)", "Flou de bougé (px)"}
 
 st.set_page_config(page_title="Clocker", page_icon="🛣️", layout="wide",
                    initial_sidebar_state="expanded")
 
-CSS = """
+CSS = r"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
-/* ---------- fond : enrobé avec grain ---------- */
-.stApp {
-  font-family: 'Barlow', 'Segoe UI', system-ui, sans-serif;
-  color: %MARKING%;
-  background-color: %ASPHALT%;
-  background-image:
-    radial-gradient(rgba(255,255,255,.45) 1px, transparent 1.2px),
-    radial-gradient(rgba(0,0,0,.045) 1px, transparent 1.2px),
-    radial-gradient(ellipse at 50% -10%, rgba(255,255,255,.55), transparent 55%);
-  background-size: 4px 4px, 7px 7px, 100% 100%;
-  background-position: 0 0, 2px 3px, 0 0;
-}
+.stApp { font-family: 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif; color: %MARKING%;
+  background:
+    radial-gradient(1200px 500px at 85% -10%, rgba(255,255,255,.9), transparent 60%),
+    radial-gradient(900px 600px at 10% 110%, rgba(214,226,243,.8), transparent 60%),
+    linear-gradient(115deg, transparent 38%, rgba(255,255,255,.55) 52%, transparent 68%),
+    %ASPHALT%; }
 header[data-testid="stHeader"] { background: transparent; }
-.block-container { padding-top: 2.6rem; max-width: 1440px; }
-.stApp h1, .stApp h2, .stApp h3, .stApp h4 {
-  font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 700;
-  color: %MARKING%;
-}
-[data-testid="stCaptionContainer"], .stCaption { color: %MUTED% !important; }
+.block-container { padding-top: 3.2rem; padding-left: 2.2rem; padding-right: 2.2rem; max-width: 1480px; }
+.stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5 { font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 700; letter-spacing: -.01em; }
 
-/* ---------- barre latérale : bas-côté ---------- */
-[data-testid="stSidebar"] {
-  background: linear-gradient(180deg, #C9CDD2, #BEC2C8);
-  border-right: 6px solid transparent;
-  border-image: repeating-linear-gradient(180deg, #FFFFFF 0 26px, %GRAPHITE% 26px 44px) 6;
-}
-[data-testid="stSidebar"] h3 { font-size: 1.25rem; margin-top: .6rem; }
+/* ---------- état en haut à droite ---------- */
+.ck-status { position: fixed; top: .95rem; right: 15rem; z-index: 1000001; display: flex;
+  align-items: center; gap: .45rem; font-size: .8rem; font-weight: 600; letter-spacing: .04em;
+  color: #2E7D4F; padding-right: .9rem; border-right: 1px solid %KERB%; }
+.ck-status i { width: 8px; height: 8px; border-radius: 50%; background: %GREEN%;
+  box-shadow: 0 0 0 3px rgba(30,158,87,.18); }
 
-/* ---------- onglets : marquage au sol ---------- */
-.stTabs [data-baseweb="tab-list"] { gap: .3rem; border-bottom: 2px dashed %KERB%; }
-.stTabs [data-baseweb="tab"] { padding: .45rem .95rem; border-radius: 6px 6px 0 0; }
-.stTabs [data-baseweb="tab"] p {
-  font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 1.12rem;
-  color: %MUTED%;
-}
-.stTabs [data-baseweb="tab"]:hover p { color: %MARKING%; }
-.stTabs [aria-selected="true"] { background: rgba(69,74,81,.08); }
-.stTabs [aria-selected="true"] p { color: %MARKING%; }
-.stTabs [data-baseweb="tab-highlight"] { background: %GRAPHITE%; height: 3px; }
+/* ---------- barre latérale ---------- */
+[data-testid="stSidebar"] { background:
+    radial-gradient(160% 55% at 110% -8%, rgba(120,160,230,.20) 0 38%, transparent 38.5%),
+    radial-gradient(90% 40% at 0% 0%, rgba(47,116,240,.22), transparent 70%),
+    linear-gradient(180deg, #11244A 0%, #0D1B36 45%, #0A1528 100%); }
+[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h4 [data-testid="stIconMaterial"],
+[data-testid="stSidebar"] h4 span[role="img"] { font-size: 1.35rem !important; color: #fff; }
+[data-testid="stSidebar"] [data-testid="stWidgetLabel"] p { color: #C9D3E4; }
+[data-testid="stSidebar"][aria-expanded="true"] { width: 264px !important; min-width: 264px !important;
+  max-width: 264px !important; }
+[data-testid="stSidebar"] [data-testid="stCheckbox"] p { font-size: .95rem; color: #EEF2F9; }
+[data-testid="stSidebar"] h3, [data-testid="stSidebar"] h4 { font-size: 1.08rem; font-weight: 700;
+  margin: .5rem 0 .5rem; color: #fff; }
+[data-testid="stSidebar"] hr { border: none; border-top: 1px solid rgba(255,255,255,.10); margin: .9rem 0 .5rem; }
+.ck-logo { text-align: center; padding: .4rem 0 1.1rem; border-bottom: 1px solid rgba(255,255,255,.09);
+  margin-bottom: .4rem; }
+.ck-logo svg { width: 64px; height: 39px; }
+.ck-logo b { display: block; font-size: 1.75rem; font-weight: 800; color: #fff; letter-spacing: -.02em;
+  line-height: 1.1; }
+.ck-logo span { font-size: .84rem; color: #B9C5DA; }
+[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] {
+  position: relative; min-height: 124px; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: .35rem; padding: 1rem; cursor: pointer;
+  background: rgba(255,255,255,.035); border: 1.5px dashed rgba(255,255,255,.30); border-radius: 14px;
+  transition: border-color .15s ease, background .15s ease; }
+[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"]:hover,
+[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"]:focus-within {
+  border-color: #6FA0FF; background: rgba(47,116,240,.10); }
+[data-testid="stSidebar"] [data-testid="stFileUploaderDropzoneInstructions"] { display: none; }
+[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] > span > button {
+  position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; z-index: 2; cursor: pointer; }
+[data-testid="stSidebar"] [data-testid="stFileChips"], [data-testid="stSidebar"] [data-testid="stFileChip"],
+[data-testid="stSidebar"] [data-testid="stFileChipDeleteBtn"] { position: relative; z-index: 3; }
+[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"]::before {
+  content: ""; width: 34px; height: 30px; background: center / contain no-repeat
+  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 18a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 9.5a4 4 0 0 1-.5 7.97'/%3E%3Cpath d='m9 13 3-3 3 3M12 10v9'/%3E%3C/svg%3E"); }
+[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"]::after {
+  content: "Glisser-déposer une image\Aou cliquer pour parcourir"; white-space: pre-line;
+  text-align: center; font-size: .9rem; font-weight: 600; line-height: 1.5; color: #EEF2F9; }
+[data-testid="stSidebar"] [data-testid="stButtonGroup"] [role="radiogroup"] {
+  display: flex; flex-wrap: nowrap; gap: .5rem; }
+[data-testid="stSidebar"] button[data-variant="segmented_control"] {
+  flex: 1 1 auto; white-space: nowrap; border-radius: 10px !important; padding: .45rem .7rem;
+  border: 1px solid rgba(255,255,255,.22) !important; background: rgba(255,255,255,.04); }
+[data-testid="stSidebar"] button[data-variant="segmented_control"] p { font-size: .84rem; font-weight: 600; }
+[data-testid="stSidebar"] button[data-variant="segmented_control"][aria-checked="true"] {
+  background: %BLUE% !important; border-color: %BLUE% !important; color: #fff !important;
+  box-shadow: 0 6px 16px rgba(31,99,224,.35); }
+[data-testid="stSidebar"] button[data-variant="segmented_control"][aria-checked="true"] * { color: #fff !important; }
+.ck-log { display: flex; align-items: center; gap: .6rem; color: %MARKING%;
+  background: linear-gradient(90deg, #FFFFFF, #E9EDF4); border-radius: 12px; padding: .6rem .9rem;
+  margin-bottom: .45rem; font-size: .92rem; font-weight: 600; box-shadow: 0 6px 14px rgba(0,0,0,.18); }
+.ck-log i { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+.ck-log img { width: 26px; height: 26px; object-fit: contain; border-radius: 5px; }
+.ck-log span { margin-left: auto; color: %MUTED%; font-weight: 500; font-size: .8rem; }
+
+/* ---------- onglets ---------- */
+.stTabs [data-baseweb="tab-list"], [data-testid="stTabs"] [role="tablist"] {
+  gap: 1.25rem; border-bottom: 1px solid %KERB%; }
+.stTabs [data-baseweb="tab"], [data-testid="stTab"] { padding: .8rem .15rem .75rem; background: transparent; }
+.stTabs [data-baseweb="tab"] p, [data-testid="stTab"] p { font-size: .98rem; font-weight: 500; white-space: nowrap;
+  color: #36425E; display: flex; align-items: center; gap: .45rem; }
+[data-testid="stTab"] p span[role="img"], .stTabs [data-baseweb="tab"] [data-testid="stIconMaterial"] {
+  font-size: 1.35rem !important; color: #44506B; }
+.stTabs [aria-selected="true"] p, [data-testid="stTab"][aria-selected="true"] p,
+[data-testid="stTab"][aria-selected="true"] p span[role="img"] { color: %BLUE% !important; font-weight: 700; }
+[data-testid="stTab"][aria-selected="true"] { box-shadow: inset 0 -3px 0 %BLUE%; }
+[data-testid="stTab"]:hover p { color: %MARKING%; }
+.stTabs [data-baseweb="tab-highlight"] { background: %BLUE%; height: 3px; border-radius: 3px; }
 .stTabs [data-baseweb="tab-border"] { display: none; }
 
-/* ---------- en-tête : route en perspective ---------- */
-.ck-hero { position: relative; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
-  min-height: 190px; border-radius: 14px; overflow: hidden; margin-bottom: 1.3rem;
-  background: linear-gradient(180deg, #B9BEC4 0%, #A7ADB4 46%, #969CA3 60%, #7D838A 100%);
-  box-shadow: 0 0 0 1px %KERB%, 0 14px 30px rgba(40,44,50,.18); }
-.ck-hero-text { position: relative; z-index: 2; padding: 1.5rem 1.8rem;
-  display: flex; flex-direction: column; justify-content: center; gap: .55rem;
-  background: linear-gradient(90deg, rgba(222,225,229,.96) 55%, transparent); }
-.ck-word { font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 800;
-  font-size: clamp(2.8rem, 5vw, 4.2rem); line-height: .9; letter-spacing: .01em; color: %MARKING%; }
+/* ---------- en-tête ---------- */
+.ck-hero { position: relative; min-height: 222px; border-radius: 20px; overflow: hidden;
+  margin: .3rem 0 1.4rem; background: linear-gradient(100deg, #FFFFFF 0%, #F3F6FB 45%, #E9EFF8 100%);
+  box-shadow: 0 1px 0 rgba(255,255,255,.9) inset, 0 18px 40px rgba(20,40,80,.12),
+              0 0 0 1px rgba(20,40,80,.05); }
+.ck-hero-img { position: absolute; top: 0; right: 0; bottom: 0; width: 66%;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.6) 14%, #000 32%);
+          mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.6) 14%, #000 32%); }
+.ck-hero-img svg, .ck-hero-img div { width: 100%; height: 100%; display: block; }
+.ck-hero-img div { background-size: cover; background-position: center; }
+.ck-hero-text { position: relative; z-index: 2; padding: 1.9rem 2.3rem; max-width: 470px; }
+.ck-word { font-weight: 800; font-size: clamp(2.8rem, 4.4vw, 4.2rem); line-height: .95;
+  letter-spacing: -.035em; color: #0B1630; }
+.ck-sub { font-size: 1.22rem; line-height: 1.35; color: #1C2A48; margin-top: .7rem; font-weight: 500; }
+.ck-badges { display: flex; flex-wrap: wrap; gap: .55rem; margin-top: 1.1rem; }
+.ck-badge { display: inline-flex; align-items: center; gap: .45rem; padding: .5rem .85rem;
+  border-radius: 8px; color: #fff; font-weight: 700; font-size: .9rem; white-space: nowrap;
+  box-shadow: 0 6px 14px rgba(20,40,80,.14); }
+.ck-badge svg { width: 16px; height: 16px; flex: none; }
+.ck-badge.e { background: %GREEN%; } .ck-badge.a { background: %RED%; }
+.ck-badge.n { background: %BLUE%; } .ck-badge.d { background: %YELLOW%; color: #1B1B1B; }
+.ck-lane { animation: ck-dash 1.6s linear infinite; }
+@keyframes ck-dash { to { stroke-dashoffset: -60; } }
 
-.ck-sub { font-size: 1.05rem; color: #3C4147; max-width: 34ch; }
-.ck-road { position: absolute; inset: 0 0 0 30%; perspective: 230px; perspective-origin: 50% 0%;
-  overflow: hidden; }
-.ck-road::before { /* lueur de l'horizon */
-  content: ""; position: absolute; left: 0; right: 0; top: 30%; height: 40px;
-  background: radial-gradient(ellipse at 50% 100%, rgba(255,255,255,.45), transparent 70%); }
-.ck-lanes { position: absolute; left: 50%; bottom: -10px; width: 460px; height: 520px;
-  margin-left: -230px; transform-origin: 50% 100%; transform: rotateX(72deg);
-  background:
-    linear-gradient(90deg, transparent 6%, #F4F4F0 6% 8%, transparent 8% 92%, #F4F4F0 92% 94%, transparent 94%),
-    repeating-linear-gradient(180deg, #F4F4F0 0 38px, transparent 38px 80px) 50% 0 / 10px 100% no-repeat,
-    #4E5258;
-  animation: ck-drive 1.1s linear infinite; }
-@keyframes ck-drive { from { background-position: 0 0, 50% 0, 0 0; }
-                      to   { background-position: 0 0, 50% 80px, 0 0; } }
-.ck-post { position: absolute; bottom: 14%; width: 10px; height: 46px; border-radius: 5px 5px 1px 1px;
-  background: linear-gradient(180deg, #fff 0 18%, #111 18% 30%, #fff 30%); opacity: .9; }
-.ck-post::after { content: ""; position: absolute; top: 4px; left: 2px; width: 6px; height: 4px;
-  background: #FF9D1A; border-radius: 1px; box-shadow: 0 0 8px #FF9D1A; }
+/* ---------- titres de section ---------- */
+.ck-h { font-weight: 700; font-size: 1.08rem; color: %MARKING%; display: flex; align-items: center;
+  gap: .55rem; margin: .2rem 0 .7rem; }
+.ck-h::before { content: ""; width: 4px; height: 18px; border-radius: 3px; background: %BLUE%; flex: none; }
+.ck-lead { color: #3B4763; max-width: 95ch; }
 
-.ck-badges { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .35rem; }
-.ck-badge { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 1rem;
-  padding: .22rem .65rem .18rem; border-radius: 5px; color: #fff; white-space: nowrap; }
-.ck-badge.e { background: %GREEN%; box-shadow: inset 0 0 0 2px %GREEN%, inset 0 0 0 4px #fff; }
-.ck-badge.a { background: %RED%; box-shadow: inset 0 0 0 2px %RED%, inset 0 0 0 4px #fff; }
-.ck-badge.n { background: %BLUE%; box-shadow: inset 0 0 0 2px %BLUE%, inset 0 0 0 4px #fff; }
-.ck-badge.d { background: %YELLOW%; color: #111; box-shadow: inset 0 0 0 2px %YELLOW%, inset 0 0 0 4px #111; }
-
-/* ---------- titres de section : plot réfléchissant ---------- */
-.ck-h { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 1.3rem;
-  color: %MARKING%; display: flex; align-items: center; gap: .55rem; margin: .2rem 0 .6rem; }
-.ck-h::before { content: ""; width: 9px; height: 9px; border-radius: 2px; background: #FF9D1A;
-  box-shadow: 0 0 0 2px rgba(255,255,255,.7), 0 0 6px rgba(255,157,26,.6); flex: none; }
-.ck-lead { color: #3C4147; max-width: 95ch; }
+/* ---------- carte d'information ---------- */
+.ck-info { position: relative; display: flex; gap: 1.2rem; align-items: flex-start; overflow: hidden;
+  background: rgba(255,255,255,.85); border: 1px solid #E3E9F2; border-left: 6px solid %BLUE%;
+  border-radius: 16px; padding: 1.6rem 1.8rem; box-shadow: 0 14px 34px rgba(20,40,80,.08); }
+.ck-info .ic { width: 40px; height: 40px; flex: none; border-radius: 50%; background: #DCE7FB;
+  display: flex; align-items: center; justify-content: center; }
+.ck-info .ic svg { width: 26px; height: 26px; }
+.ck-info b { display: block; font-size: 1.3rem; font-weight: 800; color: %MARKING%; margin-bottom: .3rem; }
+.ck-info p { margin: 0; color: #3B4763; line-height: 1.6; max-width: 80ch; position: relative; z-index: 1; }
+.ck-info .bg { position: absolute; right: 1.6rem; top: 50%; transform: translateY(-50%);
+  width: 80px; height: 80px; opacity: .22; }
 
 /* ---------- panneau de résultat (tableau de bord) ---------- */
-.ck-hud { border-radius: 16px; padding: 7px; background: %BLUE%;
-  box-shadow: 0 16px 34px rgba(30,35,42,.22); }
-.ck-hud.uncertain { background: repeating-linear-gradient(-45deg, %YELLOW% 0 16px, #33373C 16px 32px);
-  box-shadow: 0 16px 34px rgba(30,35,42,.22);
-  animation: ck-hazard 1s steps(2) 3; }
-@keyframes ck-hazard { 50% { filter: brightness(.55); } }
-.ck-hud-in { border: 3px solid #fff; border-radius: 11px; padding: 1.1rem 1.2rem 1rem;
+.ck-hud { border-radius: 18px; padding: 7px; background: %BLUE%;
+  box-shadow: 0 18px 40px rgba(31,99,224,.28); }
+.ck-hud.uncertain { background: repeating-linear-gradient(-45deg, %YELLOW% 0 16px, #1E2A44 16px 32px);
+  box-shadow: 0 18px 40px rgba(20,40,80,.2); animation: ck-hazard 1s steps(2) 3; }
+@keyframes ck-hazard { 50% { filter: brightness(.6); } }
+.ck-hud-in { border: 3px solid #fff; border-radius: 12px; padding: 1.1rem 1.2rem 1rem;
   background: %BLUE%; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 1.1rem 1.3rem;
   align-items: center; }
-.ck-hud.uncertain .ck-hud-in { background: #4A4F56; }
-.ck-sign { position: relative; width: 132px; height: 132px; border-radius: 12px; overflow: hidden;
-  background: radial-gradient(circle at 50% 40%, #fff, #E9ECEF);
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 0 0 3px rgba(255,255,255,.25), 0 0 28px rgba(255,255,255,.18); }
-.ck-sign img { width: 112px; height: 112px; object-fit: contain;
+.ck-hud.uncertain .ck-hud-in { background: #24314F; }
+.ck-sign { position: relative; width: 112px; height: 112px; border-radius: 14px; overflow: hidden;
+  background: #fff; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 0 3px rgba(255,255,255,.3), 0 10px 24px rgba(0,0,0,.18); }
+.ck-sign img { width: 94px; height: 94px; object-fit: contain;
   animation: ck-approach .9s cubic-bezier(.2,.8,.2,1) both; }
-.ck-sign::after { /* reflet des phares sur le film rétroréfléchissant */
-  content: ""; position: absolute; inset: -20%;
+.ck-sign::after { content: ""; position: absolute; inset: -20%;
   background: linear-gradient(105deg, transparent 38%, rgba(255,255,255,.9) 50%, transparent 62%);
   transform: translateX(-110%); animation: ck-sweep 1.1s .55s ease-out forwards; }
-@keyframes ck-approach { from { transform: scale(.3); filter: blur(5px) brightness(.35); opacity: .2; } }
+@keyframes ck-approach { from { transform: scale(.3); filter: blur(5px) brightness(.4); opacity: .2; } }
 @keyframes ck-sweep { to { transform: translateX(110%); } }
-.ck-title { font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 800;
-  font-size: clamp(1.8rem, 2.5vw, 2.7rem); line-height: 1; color: #fff; overflow-wrap: normal;
-  word-break: normal; hyphens: none; }
-.ck-title.long { font-size: clamp(1.45rem, 1.8vw, 1.9rem); }
-.ck-cat { color: rgba(255,255,255,.82); margin-top: .35rem; font-size: 1rem; }
+.ck-title { font-weight: 800; font-size: clamp(1.7rem, 2.3vw, 2.4rem); line-height: 1.05; color: #fff;
+  letter-spacing: -.02em; overflow-wrap: normal; word-break: normal; hyphens: none; }
+.ck-title.long { font-size: clamp(1.3rem, 1.7vw, 1.7rem); }
+.ck-cat { color: rgba(255,255,255,.85); margin-top: .35rem; font-size: .98rem; }
 .ck-gauge { grid-column: 1 / -1; display: flex; align-items: center; gap: 1rem;
   border-top: 1px solid rgba(255,255,255,.22); padding-top: .8rem; }
-.ck-gauge svg { width: 168px; flex: none; }
+.ck-gauge svg { width: 150px; flex: none; }
 .ck-gauge .needle { transform-origin: 100px 100px; animation: ck-needle 1.2s cubic-bezier(.3,1.4,.5,1) both; }
 .ck-gauge .arc { animation: ck-arc 1.2s ease-out both; }
 @keyframes ck-needle { from { transform: rotate(-90deg); } }
 @keyframes ck-arc { from { stroke-dashoffset: 251.3; } }
-.ck-verdict { color: #fff; font-size: 1rem; line-height: 1.35; }
-.ck-verdict b { font-family: 'Barlow Condensed', sans-serif; font-size: 1.25rem; display: block; }
+.ck-verdict { color: #fff; font-size: .95rem; line-height: 1.4; }
+.ck-verdict b { font-size: 1.12rem; display: block; }
 .ck-hud.compact .ck-hud-in { padding: .8rem; gap: .8rem; }
-.ck-hud.compact .ck-sign { width: 90px; height: 90px; }
-.ck-hud.compact .ck-sign img { width: 76px; height: 76px; }
-.ck-hud.compact .ck-title { font-size: 1.6rem; }
+.ck-hud.compact .ck-sign { width: 88px; height: 88px; }
+.ck-hud.compact .ck-sign img { width: 74px; height: 74px; }
+.ck-hud.compact .ck-title { font-size: 1.45rem; }
 .ck-hud.compact .ck-gauge svg { width: 132px; }
 .ck-hud.compact .ck-verdict { display: none; }
-.ck-meta { color: %MUTED%; font-size: .88rem; margin-top: .7rem; }
+.ck-meta { color: %MUTED%; font-size: .86rem; margin-top: .7rem; }
 
-/* ---------- hypothèses : jauges horizontales ---------- */
-.ck-top { display: flex; flex-direction: column; gap: .7rem; }
-.ck-row { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: .65rem; align-items: center; }
-.ck-row img { width: 40px; height: 40px; object-fit: contain; background: #fff; border-radius: 7px; padding: 3px;
-  box-shadow: 0 0 0 1px %KERB%; }
-.ck-row .lbl { font-size: .93rem; color: %MARKING%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ck-row .trk { height: 9px; background: %KERB%; border-radius: 5px; margin-top: .3rem; overflow: hidden; }
-.ck-row .fil { height: 100%; border-radius: 5px; background: #8A9098;
+/* ---------- hypothèses ---------- */
+.ck-top { display: flex; flex-direction: column; gap: .75rem; }
+.ck-row { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: .7rem; align-items: center;
+  background: #fff; border: 1px solid #E3E9F2; border-radius: 12px; padding: .5rem .7rem; }
+.ck-row img { width: 36px; height: 36px; object-fit: contain; }
+.ck-row .lbl { font-size: .9rem; font-weight: 600; color: %MARKING%; white-space: nowrap; overflow: hidden;
+  text-overflow: ellipsis; }
+.ck-row .trk { height: 7px; background: #E6ECF5; border-radius: 5px; margin-top: .35rem; overflow: hidden; }
+.ck-row .fil { height: 100%; border-radius: 5px; background: #AFBCD2;
   transform-origin: left; animation: ck-grow .8s cubic-bezier(.2,.8,.2,1) both; }
-.ck-row:first-child .fil { background: %GRAPHITE%; }
-.ck-row .pct { font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 1.05rem;
-  text-align: right; color: %MARKING%; white-space: nowrap; min-width: 54px; }
+.ck-row:first-child { border-color: rgba(31,99,224,.35); box-shadow: 0 8px 20px rgba(31,99,224,.12); }
+.ck-row:first-child .fil { background: %BLUE%; }
+.ck-row .pct { font-weight: 700; font-size: .95rem; text-align: right; color: %MARKING%;
+  white-space: nowrap; min-width: 54px; }
 .ck-row:nth-child(2) .fil { animation-delay: .08s; } .ck-row:nth-child(3) .fil { animation-delay: .16s; }
 .ck-row:nth-child(4) .fil { animation-delay: .24s; } .ck-row:nth-child(5) .fil { animation-delay: .32s; }
 @keyframes ck-grow { from { transform: scaleX(0); } }
 
 /* ---------- étapes : bornes kilométriques ---------- */
-.ck-step { display: flex; align-items: center; gap: .6rem; margin-bottom: .45rem;
-  font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 1.12rem; color: %MARKING%; }
-.ck-pk { width: 30px; height: 40px; flex: none; border-radius: 15px 15px 3px 3px;
-  background: linear-gradient(180deg, %RED% 0 40%, #F4F4F0 40%); color: #111;
+.ck-step { display: flex; align-items: center; gap: .6rem; margin-bottom: .5rem; font-weight: 700;
+  font-size: 1rem; color: %MARKING%; }
+.ck-pk { width: 28px; height: 38px; flex: none; border-radius: 14px 14px 3px 3px;
+  background: linear-gradient(180deg, %RED% 0 40%, #fff 40%); color: #111;
   display: flex; align-items: flex-end; justify-content: center; padding-bottom: 3px;
-  font-weight: 700; font-size: 1.05rem; box-shadow: 0 0 0 1px %KERB%, 0 3px 0 rgba(0,0,0,.18); }
+  font-weight: 800; font-size: .95rem; box-shadow: 0 0 0 1px %KERB%, 0 4px 10px rgba(20,40,80,.12); }
 
-/* ---------- cartes, panneaux d'information ---------- */
-.ck-panel { background: %BLUE%; border-radius: 12px; padding: 5px; }
-.ck-panel > div { border: 2px solid #fff; border-radius: 8px; padding: .8rem 1rem; color: #fff; }
-.ck-panel small { opacity: .85; font-size: .9rem; }
-.ck-panel b { display: block; font-family: 'Barlow Condensed', sans-serif; font-weight: 800;
-  font-size: 2.1rem; line-height: 1.05; }
+/* ---------- cartes ---------- */
+.ck-panel { background: %BLUE%; border-radius: 14px; padding: 5px; box-shadow: 0 12px 26px rgba(20,40,80,.12); }
+.ck-panel > div { border: 2px solid #fff; border-radius: 10px; padding: .8rem 1rem; color: #fff; }
+.ck-panel small { opacity: .9; font-size: .86rem; }
+.ck-panel b { display: block; font-weight: 800; font-size: 1.9rem; line-height: 1.1; letter-spacing: -.02em; }
 .ck-panel.green { background: %GREEN%; } .ck-panel.red { background: %RED%; }
-.ck-panel.yellow { background: %YELLOW%; } .ck-panel.yellow > div { border-color: #111; color: #111; }
-.ck-info { background: %TARMAC%; border: 1px solid %KERB%; border-left: 6px solid %GRAPHITE%;
-  border-radius: 10px; padding: 1.1rem 1.3rem; color: #3C4147; }
-.ck-info b { font-family: 'Barlow Condensed', sans-serif; font-size: 1.35rem; color: %MARKING%;
-  display: block; margin-bottom: .25rem; }
-
-.ck-chip { display: flex; gap: .6rem; align-items: center; padding: .45rem .5rem;
-  border-radius: 8px; background: %TARMAC%; border: 1px solid %KERB%; margin-bottom: .4rem; }
-.ck-chip img { width: 36px; height: 36px; object-fit: contain; border-radius: 5px; background: #fff; padding: 2px;
-  box-shadow: 0 0 0 1px %KERB%; }
-.ck-chip b { font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 1.05rem; }
-.ck-chip span { color: %MUTED%; font-size: .85rem; }
-
-.ck-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); gap: .8rem; }
-.ck-cell { background: %TARMAC%; border: 1px solid %KERB%; border-radius: 10px; padding: .7rem .5rem;
-  text-align: center; font-size: .84rem; line-height: 1.2; color: #3C4147;
-  transition: transform .15s ease, border-color .15s ease; }
-.ck-cell:hover { transform: translateY(-3px); border-color: %GRAPHITE%;
-  box-shadow: 0 8px 18px rgba(30,35,42,.12); }
-.ck-cell img { width: 62px; height: 62px; object-fit: contain; display: block; margin: 0 auto .5rem;
-  background: #fff; border-radius: 8px; padding: 4px; }
+.ck-panel.yellow { background: %YELLOW%; } .ck-panel.yellow > div { border-color: #1B1B1B; color: #1B1B1B; }
+.ck-chip { display: flex; gap: .6rem; align-items: center; padding: .5rem .6rem; border-radius: 12px;
+  background: #fff; border: 1px solid #E3E9F2; margin-bottom: .45rem; }
+.ck-chip img { width: 36px; height: 36px; object-fit: contain; border-radius: 6px; }
+.ck-chip b { font-weight: 700; font-size: .95rem; }
+.ck-chip span { color: %MUTED%; font-size: .82rem; }
+.ck-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: .85rem; }
+.ck-cell { background: #fff; border: 1px solid #E3E9F2; border-radius: 14px; padding: .8rem .5rem;
+  text-align: center; font-size: .82rem; line-height: 1.25; color: #2C3856;
+  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease; }
+.ck-cell:hover { transform: translateY(-3px); border-color: rgba(31,99,224,.4);
+  box-shadow: 0 10px 22px rgba(20,40,80,.12); }
+.ck-cell img { width: 60px; height: 60px; object-fit: contain; display: block; margin: 0 auto .5rem; }
 .ck-cell small { color: %MUTED%; }
-
-[data-testid="stImage"] img { border-radius: 10px; }
+[data-testid="stMain"] [data-testid="stImage"] img { border-radius: 12px; }
 
 @media (max-width: 900px) {
-  .ck-hero { grid-template-columns: 1fr; }
-  .ck-road { inset: 0; opacity: .35; }
+  .ck-hero-img { width: 100%; opacity: .35; }
+  .ck-status { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -280,7 +313,7 @@ def _night_theme() -> dict:
     return {"config": {
         "background": "transparent",
         "view": {"stroke": None},
-        "font": "Barlow",
+        "font": "Plus Jakarta Sans",
         "axis": {"labelColor": MUTED, "titleColor": MUTED, "gridColor": KERB,
                  "domainColor": KERB, "tickColor": KERB, "labelFontSize": 12,
                  "titleFontSize": 13},
@@ -555,29 +588,116 @@ def panel_html(label: str, value: str, color: str = "") -> str:
     return f'<div class="ck-panel {color}"><div><small>{label}</small><b>{value}</b></div></div>'
 
 
+ICONS = {
+    "check": '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="#fff"/>'
+             '<path d="m7.3 12.4 3.1 3.1 6.3-6.6" fill="none" stroke="#1E9E57" stroke-width="2.6" '
+             'stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    "alert": '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="#fff"/>'
+             '<rect x="10.7" y="5.8" width="2.6" height="8" rx="1.3" fill="#E0243A"/>'
+             '<circle cx="12" cy="17.3" r="1.6" fill="#E0243A"/></svg>',
+    "image": '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" '
+             'stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/>'
+             '<circle cx="9" cy="10" r="1.8" fill="#fff"/><path d="m4 18 5.5-5 4 3.5 3-2.5L21 18"/></svg>',
+    "db": '<svg viewBox="0 0 24 24" fill="none" stroke="#1B1B1B" stroke-width="2">'
+          '<ellipse cx="12" cy="5.5" rx="7.5" ry="3"/><path d="M4.5 5.5v6c0 1.7 3.4 3 7.5 3s7.5-1.3 '
+          '7.5-3v-6M4.5 11.5v6c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3v-6"/></svg>',
+    "info": '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#1F63E0"/>'
+            '<rect x="10.8" y="10" width="2.4" height="7.5" rx="1.2" fill="#fff"/>'
+            '<circle cx="12" cy="6.8" r="1.5" fill="#fff"/></svg>',
+    "warn": '<svg viewBox="0 0 24 24" fill="none" stroke="#7F93B6" stroke-width="1.6" '
+            'stroke-linejoin="round"><path d="M12 2.8 22 20H2z"/><path d="M12 9v5.2" '
+            'stroke-linecap="round"/><circle cx="12" cy="17" r=".9" fill="#7F93B6"/></svg>',
+}
+
+LOGO = ('<svg viewBox="0 0 76 46" aria-hidden="true">'
+        '<polygon points="4,44 31,3 36,3 21,44" fill="#fff"/>'
+        '<polygon points="55,44 40,3 45,3 72,44" fill="#F7B500"/>'
+        '<rect x="36.6" y="8" width="2.8" height="7" fill="#fff"/>'
+        '<rect x="36.2" y="20" width="3.6" height="9" fill="#fff"/>'
+        '<rect x="35.7" y="33" width="4.6" height="11" fill="#fff"/></svg>')
+
+
 def info_html(title: str, text: str) -> str:
-    return f'<div class="ck-info"><b>{title}</b>{text}</div>'
+    return (f'<div class="ck-info"><div class="ic">{ICONS["info"]}</div>'
+            f'<div><b>{title}</b><p>{text}</p></div>'
+            f'<div class="bg" aria-hidden="true">{ICONS["warn"]}</div></div>')
+
+
+def road_illustration() -> str:
+    """Route au coucher du soleil (dessin vectoriel, aucune photo externe)."""
+    trees = "".join(
+        f'<circle cx="{x}" cy="{y}" r="{r}" fill="{c}"/>'
+        for x, y, r, c in [(40, 176, 16, "#2E4A2B"), (70, 170, 21, "#34532F"),
+                           (105, 178, 13, "#2B4428"), (140, 174, 17, "#30502D"),
+                           (178, 180, 10, "#2B4428"), (360, 183, 9, "#2E4A2B"),
+                           (400, 180, 13, "#30502D"), (640, 182, 10, "#2E4A2B"),
+                           (670, 176, 15, "#34532F"), (700, 178, 12, "#2B4428"),
+                           (735, 170, 20, "#34532F"), (772, 175, 16, "#2E4A2B"),
+                           (812, 166, 26, "#30502D"), (858, 172, 19, "#2E4A2B"),
+                           (890, 162, 30, "#34532F")])
+    posts = "".join(
+        f'<g transform="translate({x} {y}) scale({k})"><rect x="-4" y="-34" width="8" height="34" '
+        f'rx="3" fill="#F4F4F2"/><rect x="-4" y="-26" width="8" height="6" fill="#1B1B1B"/>'
+        f'<rect x="-2.5" y="-31" width="5" height="3" fill="#FF8A1F"/></g>'
+        for x, y, k in [(360, 276, 1.15), (418, 238, .8), (452, 218, .6), (478, 206, .45),
+                        (690, 282, 1.25), (628, 242, .85), (594, 222, .62), (572, 209, .47)])
+    return f"""
+<svg viewBox="0 0 900 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+ <defs>
+  <linearGradient id="ck-sky" x1="0" y1="0" x2="0" y2="1">
+   <stop offset="0" stop-color="#6C93C8"/><stop offset=".38" stop-color="#B9CBE4"/>
+   <stop offset=".55" stop-color="#F1B97F"/><stop offset=".64" stop-color="#F6D2A0"/></linearGradient>
+  <radialGradient id="ck-sun" cx="530" cy="186" r="150" gradientUnits="userSpaceOnUse">
+   <stop offset="0" stop-color="#FFF1CF" stop-opacity=".95"/>
+   <stop offset="1" stop-color="#FFF1CF" stop-opacity="0"/></radialGradient>
+  <linearGradient id="ck-field" x1="0" y1="0" x2="0" y2="1">
+   <stop offset="0" stop-color="#7C8F4A"/><stop offset="1" stop-color="#4C6A2A"/></linearGradient>
+  <linearGradient id="ck-tar" x1="0" y1="0" x2="0" y2="1">
+   <stop offset="0" stop-color="#8A8E95"/><stop offset="1" stop-color="#3B4048"/></linearGradient>
+ </defs>
+ <rect width="900" height="300" fill="url(#ck-sky)"/>
+ <rect width="900" height="300" fill="url(#ck-sun)"/>
+ <path d="M0 190 Q120 182 240 188 T480 186 T700 187 T900 184 V200 H0Z" fill="#3E5A35" opacity=".75"/>
+ {trees}
+ <rect y="192" width="900" height="108" fill="url(#ck-field)"/>
+ <polygon points="516,191 528,191 900,300 250,300" fill="url(#ck-tar)"/>
+ <polygon points="516,191 518.5,191 290,300 268,300" fill="#F4F4F2"/>
+ <polygon points="526,191 528.5,191 885,300 860,300" fill="#F4F4F2"/>
+ <line class="ck-lane" x1="522" y1="192" x2="588" y2="300" stroke="#F4F4F2" stroke-width="5"
+       stroke-dasharray="26 34"/>
+ {posts}
+</svg>"""
+
+
+def hero_media() -> str:
+    """Photo personnelle si assets/hero.jpg|png|webp existe, sinon l'illustration."""
+    for ext in ("jpg", "jpeg", "png", "webp"):
+        photo = ROOT / "assets" / f"hero.{ext}"
+        if photo.exists():
+            mime = "jpeg" if ext in ("jpg", "jpeg") else ext
+            uri = f"data:image/{mime};base64," + base64.b64encode(photo.read_bytes()).decode()
+            return f'<div style="background-image:url({uri})"></div>'
+    return road_illustration()
 
 
 def hero_html(stats: dict | None) -> str:
-    badges = ['<span class="ck-badge e">43 panneaux connus</span>']
+    badges = [f'<span class="ck-badge e">{ICONS["check"]}43 panneaux connus</span>']
     if stats:
-        badges.append(f'<span class="ck-badge a">{fmt_pct(stats["accuracy"])} sur GTSRB</span>')
-        badges.append(f'<span class="ck-badge n">{stats["latence_ms_image"]:.1f} ms par image'
-                      .replace(".", ",") + "</span>")
-        badges.append(f'<span class="ck-badge d">{stats["nb_parametres"] / 1000:.0f} k '
-                      "paramètres</span>")
-    posts = "".join(
-        f'<div class="ck-post" style="left:{x}%;transform:scale({s})"></div>'
-        for x, s in [(14, 1), (24, .7), (31, .5), (82, 1), (73, .7), (66, .5)])
+        badges.append(f'<span class="ck-badge a">{ICONS["alert"]}'
+                      f'{fmt_pct(stats["accuracy"])} sur GTSRB</span>')
+        badges.append(f'<span class="ck-badge n">{ICONS["image"]}'
+                      + f'{stats["latence_ms_image"]:.1f} ms par image'.replace(".", ",")
+                      + "</span>")
+        badges.append(f'<span class="ck-badge d">{ICONS["db"]}'
+                      f'{stats["nb_parametres"] / 1000:.0f} k paramètres</span>')
     return f"""
 <div class="ck-hero">
+ <div class="ck-hero-img">{hero_media()}</div>
  <div class="ck-hero-text">
   <div class="ck-word">Clocker</div>
-  <div class="ck-sub">Reconnaissance de panneaux routiers pour l'aide à la conduite</div>
+  <div class="ck-sub">Reconnaissance de panneaux routiers<br>pour l'aide à la conduite</div>
   <div class="ck-badges">{''.join(badges)}</div>
  </div>
- <div class="ck-road" aria-hidden="true"><div class="ck-lanes"></div>{posts}</div>
 </div>"""
 
 
@@ -616,14 +736,18 @@ demo_files = sorted(p for p in demo_dir.glob("*") if p.suffix.lower()
 tests = test_index()
 
 with st.sidebar:
-    st.markdown("### Image à analyser")
+    st.markdown(f'<div class="ck-logo">{LOGO}<b>Clocker</b>'
+                '<span>Analyse &amp; performance routière</span></div>', unsafe_allow_html=True)
+    st.markdown("#### :material/bar_chart: Image à analyser")
     sources = ["Importer"]
     if tests is not None:
         sources.append("Exemples GTSRB")
     if demo_files:
         sources.append("Démo")
+    source_icons = {"Importer": ":material/upload: Importer",
+                    "Exemples GTSRB": "Exemples GTSRB", "Démo": ":material/play_arrow: Démo"}
     source = st.segmented_control("Source", sources, default="Importer", required=True,
-                                  label_visibility="collapsed")
+                                  format_func=source_icons.get, label_visibility="collapsed")
 
     image, image_label = None, None
     if source == "Importer":
@@ -649,7 +773,8 @@ with st.sidebar:
         pick = st.selectbox("Image", [p.name for p in demo_files])
         image, image_label = load_rgb(demo_dir / pick), pick
 
-    st.markdown("### Modèle")
+    st.divider()
+    st.markdown("#### :material/settings: Modèle")
     model_name = st.selectbox("Modèle", models, index=models.index(default_model),
                               label_visibility="collapsed")
     prep = config.load_prep(model_name)
@@ -664,11 +789,13 @@ with st.sidebar:
 
 model = get_model(model_name)
 size = model.input_shape[1]
+st.markdown('<div class="ck-status"><i></i>MODÈLE PRÊT</div>', unsafe_allow_html=True)
 st.markdown(hero_html(load_metrics(model_name)), unsafe_allow_html=True)
 
 tab_rec, tab_pipe, tab_rob, tab_scene, tab_res, tab_cat = st.tabs([
-    "Reconnaissance", "Étapes du traitement", "Robustesse", "Scène complète",
-    "Résultats du modèle", "Panneaux reconnus",
+    ":material/directions_car: Reconnaissance", ":material/settings: Étapes du traitement",
+    ":material/shield: Robustesse", ":material/play_arrow: Scène complète",
+    ":material/bar_chart: Résultats du modèle", ":material/image: Panneaux reconnus",
 ])
 
 # --------------------------------------------------------------------------- #
@@ -695,10 +822,13 @@ if image is not None:
 with st.sidebar:
     hist = st.session_state.get("history", [])
     if hist:
-        st.markdown("### Journal de bord")
+        st.divider()
+        st.markdown("#### Journal de bord")
         st.markdown("".join(
-            f'<div class="ck-chip"><img src="{h["thumb"]}" alt=""><div><b>'
-            f'{short_name(h["cid"])}</b><br><span>{fmt_pct(h["conf"])}</span></div></div>'
+            f'<div class="ck-log" style="color:'
+            f'{CATEGORY_COLORS.get(class_category(h["cid"]), MARKING)}"><i style="background:'
+            f'{CATEGORY_COLORS.get(class_category(h["cid"]), MUTED)}"></i>'
+            f'{short_name(h["cid"])}<span>{fmt_pct(h["conf"])}</span></div>'
             for h in hist), unsafe_allow_html=True)
         if st.button("Vider le journal", type="tertiary"):
             st.session_state["history"] = []
@@ -715,11 +845,11 @@ with tab_rec:
         st.markdown(info_html(
             "Choisissez une image pour démarrer",
             "Importez une photo de panneau dans la barre de gauche, ou prenez un exemple du "
-            "jeu de test GTSRB. Le modèle reconnaît les 43 panneaux de l'onglet "
+            "jeu de test GTSRB.<br>Le modèle reconnaît les 43 panneaux de l'onglet "
             "<i>Panneaux reconnus</i> : un panneau absent de cette liste, comme le 110 km/h "
             "français, sera confondu avec le plus proche."), unsafe_allow_html=True)
     else:
-        c_in, c_hud, c_top = st.columns([1, 1.6, 1.05], gap="large")
+        c_in, c_hud, c_top = st.columns([0.95, 1.5, 1.25], gap="large")
         with c_in:
             heading("Vue caméra")
             shown = image
@@ -843,20 +973,20 @@ with tab_rob:
                       axis=alt.Axis(format="%"), title=f"Probabilité de « {short_name(ref)} »")
         area = alt.Chart(df).mark_area(
             color=alt.Gradient(gradient="linear", x1=1, x2=1, y1=1, y2=0, stops=[
-                alt.GradientStop(color="rgba(69,74,81,0)", offset=0),
-                alt.GradientStop(color="rgba(69,74,81,.22)", offset=1)]),
+                alt.GradientStop(color="rgba(31,99,224,0)", offset=0),
+                alt.GradientStop(color="rgba(31,99,224,.22)", offset=1)]),
             interpolate="monotone").encode(x=x_enc, y=y_enc)
-        line = alt.Chart(df).mark_line(color=GRAPHITE, strokeWidth=2.5,
+        line = alt.Chart(df).mark_line(color=BLUE, strokeWidth=2.5,
                                        interpolate="monotone").encode(x=x_enc, y=y_enc)
         pts = alt.Chart(df).mark_circle(size=80, opacity=1).encode(
             x=x_enc, y=y_enc,
             color=alt.Color("Prédiction:N", scale=alt.Scale(
-                domain=[keep, "Autre panneau"], range=[BLUE, RED]),
+                domain=[keep, "Autre panneau"], range=[GREEN, RED]),
                 legend=alt.Legend(orient="bottom", title=None)),
             tooltip=[alt.Tooltip("Intensité:Q", format=".2f"),
                      alt.Tooltip("Probabilité:Q", format=".1%"), "Prédiction:N"])
         rule = alt.Chart(pd.DataFrame({"x": [level]})).mark_rule(
-            strokeDash=[6, 5], color=GRAPHITE, strokeWidth=2).encode(x="x:Q")
+            strokeDash=[6, 5], color=MARKING, strokeWidth=2).encode(x="x:Q")
         heading("Jusqu'où le modèle tient-il sur cette image ?")
         st.altair_chart((area + line + pts + rule).properties(height=290),
                         width="stretch", theme=None)

@@ -1,0 +1,16 @@
+{
+  "modele": "clahe_debruit",
+  "detecteur": "couleur_hough",
+  "images": 600,
+  "panneaux_annotes": 852,
+  "min_area_ratio": 0.0004,
+  "rappel_detecteur_seul": 0.2734741784037559,
+  "seuil": 0.6,
+  "precision_complete": 0.03412462908011869,
+  "rappel_complet": 0.2699530516431925,
+  "precision_localisation": 0.034421364985163204,
+  "rappel_localisation": 0.27230046948356806,
+  "faux_positifs_par_image": 10.846666666666666,
+  "temps_ms_par_image": 804.2,
+  "fps_scene": 1.2
+}

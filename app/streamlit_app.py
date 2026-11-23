@@ -25,7 +25,36 @@ from clocker.robustness import gaussian_blur, gaussian_noise  # noqa: E402
 ALERT_COLORS = {SPEED_LIMIT: "#1f6feb", DANGER: "#f0883e", PROHIBITION: "#da3633"}
 BOX_COLORS = {SPEED_LIMIT: (31, 111, 235), DANGER: (240, 136, 62), PROHIBITION: (218, 54, 51)}
 
-st.set_page_config(page_title="Clocker — Panneaux routiers", page_icon="🚦", layout="wide")
+st.set_page_config(page_title="Clocker — Panneaux routiers", page_icon="🛣️", layout="wide", initial_sidebar_state="expanded")
+
+def _hero_road_data_uri() -> str:
+    asset = Path(__file__).resolve().parent.parent / "assets" / "ui" / "clocker_hero_road.jpg"
+    try:
+        import base64
+        return "data:image/jpeg;base64," + base64.b64encode(asset.read_bytes()).decode("ascii")
+    except OSError:
+        return ""
+
+
+st.markdown(r"""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&display=swap');
+.stApp{font-family:'DM Sans',sans-serif;color:#102447;background:radial-gradient(ellipse at 80% 0%,rgba(90,145,235,.15),transparent 34%),linear-gradient(135deg,#f8faff,#edf3fc 55%,#e8effb)}
+.block-container{max-width:1500px;padding:1.4rem 2rem 3rem}h1,h2,h3{font-family:'Manrope',sans-serif!important;color:#102447!important;letter-spacing:-.03em}
+[data-testid="stSidebar"]{background:linear-gradient(165deg,#10294d,#0b1c36 65%,#102b50);border-right:1px solid rgba(255,255,255,.12)}[data-testid="stSidebar"] *{color:#edf4ff!important}
+[data-testid="stSidebar"] [data-baseweb="select"]>div{background:rgba(255,255,255,.1);border-radius:10px}
+[data-testid="stSidebar"] [data-testid="stFileUploader"] section{background:rgba(255,255,255,.07);border:1px dashed rgba(175,205,255,.55);border-radius:14px}
+.stButton button{border:0;border-radius:10px;background:linear-gradient(135deg,#2678f5,#1555ca);color:white;font-weight:700;box-shadow:0 6px 18px rgba(25,103,226,.2)}
+.ck-legacy-hero{display:grid;grid-template-columns:1.05fr .95fr;align-items:center;overflow:hidden;min-height:245px;margin:.3rem 0 1.5rem;border-radius:22px;background:linear-gradient(110deg,#fbfdff 0%,#dce9fb 48%,#879fbe 100%);box-shadow:0 18px 44px rgba(31,65,119,.15),inset 0 0 0 1px white}
+.ck-legacy-copy{padding:2rem 2.3rem;position:relative;z-index:2}.ck-legacy-title{font:800 clamp(3.5rem,5vw,5.1rem)/.95 'Manrope',sans-serif;letter-spacing:-.07em;color:#102447}
+.ck-legacy-sub{font-size:1.12rem;color:#294467;margin-top:.7rem;max-width:38ch}.ck-legacy-road{min-height:245px;position:relative;overflow:hidden;background:linear-gradient(90deg,rgba(220,233,251,.15),transparent 30%),linear-gradient(180deg,#a7bad3,#52647e)}
+.ck-legacy-road:before{content:'';position:absolute;left:50%;bottom:-110px;width:420px;height:450px;transform:translateX(-50%) perspective(250px) rotateX(58deg);background:linear-gradient(90deg,transparent 7%,white 7.5% 8.5%,transparent 9% 91%,white 91.5% 92.5%,transparent 93%),repeating-linear-gradient(180deg,white 0 30px,transparent 30px 72px) 50% 0/9px 100% no-repeat,linear-gradient(90deg,#303947,#4b5667 50%,#303947);box-shadow:0 0 30px rgba(15,30,55,.3)}
+.ck-legacy-metrics{display:flex;flex-wrap:wrap;gap:.55rem;margin-top:1.1rem}.ck-legacy-pill{padding:.45rem .75rem;border-radius:9px;background:#1769e8;color:#fff;font-weight:700;font-size:.85rem}.ck-legacy-pill.green{background:#159b68}.ck-legacy-pill.gold{background:#f5b82e;color:#17243a}
+.ck-legacy-result{padding:1.25rem 1.4rem;border-radius:16px;border:1px solid #d9e5f5;border-left:6px solid #1769e8;background:linear-gradient(110deg,#fff,#f4f8ff);box-shadow:0 12px 30px rgba(31,65,119,.08);color:#294467}
+[data-testid="stImage"] img{border-radius:13px;box-shadow:0 7px 18px rgba(20,48,88,.08)}
+@media(max-width:850px){.block-container{padding:1rem}.ck-legacy-hero{grid-template-columns:1fr}.ck-legacy-road{min-height:130px}}
+</style>
+""",unsafe_allow_html=True)
 
 
 @st.cache_resource
@@ -44,20 +73,38 @@ def dashboard_alert(pred) -> None:
     color = ALERT_COLORS.get(pred.category, "#6e7781")
     big = f"{SPEED_VALUES[pred.class_id]} km/h" if pred.class_id in SPEED_VALUES else pred.name
     st.markdown(
-        f"""<div style="border-left:8px solid {color};padding:14px 18px;border-radius:6px;
-        background:rgba(127,127,127,0.08)">
-        <div style="font-size:0.85rem;opacity:0.7">{pred.category.upper()}</div>
-        <div style="font-size:2rem;font-weight:700">{big}</div>
-        <div>{pred.name} — confiance <b>{pred.confidence:.1%}</b></div></div>""",
+        f"""<div class="ck-legacy-result" style="border-left-color:{color}">
+        <div style="font-size:.8rem;letter-spacing:.08em;font-weight:800;color:#66758d">{pred.category.upper()}</div>
+        <div style="font:800 2.2rem 'Manrope',sans-serif;color:#102447;margin:.2rem 0">{big}</div>
+        <div style="color:#294467">{pred.name} — confiance <b>{pred.confidence:.1%}</b></div></div>""",
         unsafe_allow_html=True,
     )
     if pred.confidence < 0.6:
         st.warning("Confiance faible : l'alerte ne serait pas affichée au conducteur.")
 
 
-st.title("🚦 Clocker — Reconnaissance de panneaux de signalisation")
+st.markdown("""
+<div class="ck-legacy-hero"><div class="ck-legacy-copy"><div class="ck-legacy-title">Clocker</div>
+<div class="ck-legacy-sub">Reconnaissance de panneaux routiers<br>pour l'aide à la conduite</div>
+<div class="ck-legacy-metrics"><span class="ck-legacy-pill green">43 panneaux GTSRB</span>
+<span class="ck-legacy-pill">98,99 % de précision</span><span class="ck-legacy-pill gold">823 k paramètres</span></div></div>
+<div class="ck-legacy-road"></div></div>
+""",unsafe_allow_html=True)
 
 with st.sidebar:
+    st.markdown("""
+    <div class="ck-brand">
+      <svg class="ck-brand-mark" viewBox="0 0 100 68" aria-hidden="true">
+        <path d="M8 60 L45 4 L55 4 L28 60 Z" fill="#F5F8FF"/>
+        <path d="M56 4 L92 60 L76 60 L51 4 Z" fill="#F4B72E"/>
+        <path d="M49 15 L54 15 L58 23 L46 23 Z" fill="#172b4d"/>
+        <path d="M41 31 L61 31 L66 40 L36 40 Z" fill="#172b4d"/>
+        <path d="M31 49 L70 49 L76 60 L24 60 Z" fill="#172b4d"/>
+      </svg>
+      <div class="ck-brand-name">Clocker</div>
+      <div class="ck-brand-tag">Analyse &amp; performance routière</div>
+    </div>
+    """, unsafe_allow_html=True)
     st.header("Paramètres")
     mode = st.radio(
         "Type d'image",
@@ -137,3 +184,31 @@ else:
              width="stretch")
     for _, pred in sorted(results, key=lambda r: -r[1].confidence):
         dashboard_alert(pred)
+
+_legacy_road_uri = _hero_road_data_uri()
+st.markdown(f"""
+<style>
+.ck-legacy-hero {{
+  position:relative;isolation:isolate;display:grid;grid-template-columns:1fr 1.12fr;
+  align-items:center;overflow:hidden;min-height:248px;margin:.2rem 0 1.35rem;
+  border-radius:19px;background-color:#dce7f8;
+  background-image:linear-gradient(90deg,#f8faff 0%,rgba(246,249,255,.98) 31%,
+    rgba(238,244,255,.84) 44%,rgba(235,242,255,.08) 65%,transparent 100%),url("{_legacy_road_uri}");
+  background-size:100% 100%,cover;background-position:center,center 56%;
+  box-shadow:0 16px 36px rgba(44,72,125,.17),inset 0 0 0 1px rgba(255,255,255,.9);
+}}
+.ck-legacy-copy{{padding:1.8rem 2.25rem;position:relative;z-index:2}}
+.ck-legacy-title{{font:800 clamp(3.6rem,5.5vw,5.25rem)/.92 'Manrope',sans-serif;letter-spacing:-.075em;color:#101d3d}}
+.ck-legacy-sub{{font-size:1.1rem;line-height:1.4;color:#172849;margin-top:.55rem;max-width:36ch}}
+.ck-legacy-road{{display:none}}
+.ck-legacy-metrics{{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1rem}}
+.ck-legacy-pill{{padding:.48rem .72rem;border-radius:8px;background:#1769f5;color:white;font-weight:700;font-size:.82rem;box-shadow:0 5px 12px rgba(16,34,68,.12)}}
+.ck-legacy-pill.green{{background:#0eaa68}}.ck-legacy-pill.gold{{background:#ffbd20;color:#15213b}}
+.ck-brand{{text-align:center;padding:1rem .3rem 1.25rem;margin:-.3rem 0 .8rem;border-bottom:1px solid rgba(222,234,255,.15)}}
+.ck-brand-mark{{width:62px;height:45px;margin:0 auto .35rem;display:block}}
+.ck-brand-name{{font:800 1.65rem/1 'Manrope',sans-serif;color:#fff;letter-spacing:-.055em}}
+.ck-brand-tag{{font:500 .72rem 'DM Sans',sans-serif;color:#b9c9e5;margin-top:.45rem}}
+.ck-legacy-result{{border-radius:14px!important}}
+@media(max-width:950px){{.ck-legacy-hero{{grid-template-columns:1fr;min-height:285px;background-position:center,65% center}}.ck-legacy-copy{{padding:1.4rem}}}}
+</style>
+""",unsafe_allow_html=True)

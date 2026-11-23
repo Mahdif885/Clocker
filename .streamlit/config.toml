@@ -1,9 +1,21 @@
 [theme]
 base = "light"
-primaryColor = "#454A51"
-backgroundColor = "#D4D7DB"
-secondaryBackgroundColor = "#C3C7CC"
-textColor = "#26292D"
+primaryColor = "#1F63E0"
+backgroundColor = "#EEF2F7"
+secondaryBackgroundColor = "#E4EAF3"
+textColor = "#14203A"
+borderColor = "#D8E0EB"
+baseRadius = "0.6rem"
+baseFontSize = 14
+font = "Plus Jakarta Sans:https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap, sans-serif"
+headingFont = "Plus Jakarta Sans:https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap, sans-serif"
+
+[theme.sidebar]
+primaryColor = "#2F74F0"
+backgroundColor = "#0E1B33"
+secondaryBackgroundColor = "#1A2A48"
+textColor = "#E6ECF6"
+borderColor = "#2A3B5C"
 
 [server]
 maxUploadSize = 50
